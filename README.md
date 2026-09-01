@@ -6,7 +6,7 @@ RootPreflight is an Android pre-install safety and compatibility scanner for **M
 
 Choose a module ZIP and RootPreflight inspects its metadata, boot/install scripts, system overlays, property changes and archive structure before you install it.
 
-> **Status:** `0.1.0-alpha.1` MVP. The static scanner and optional root-aware conflict index are implemented. BLCRootSpace virtual execution is a roadmap feature, not yet claimed as available.
+> **Status:** `0.1.0-alpha.1` MVP. The static scanner and optional root-aware conflict index are implemented.
 
 ## Why this exists
 
@@ -49,22 +49,7 @@ Installed-module conflicts:
 
 **Root Mode** adds device context. It can inspect installed module overlays/properties and answer: *Will this ZIP collide with something already installed here?*
 
-RootPreflight does **not** install a module in the MVP.
-
-## Virtual Test roadmap
-
-RootPreflight is designed to integrate with [BLCRootSpace](https://github.com/BLCCoreStudio/BLCRootSpace) when its rooted Android guest compatibility path is ready.
-
-The intended future flow is:
-
-1. Create an isolated rooted Android guest snapshot.
-2. Install the selected root module inside the guest only.
-3. Boot the guest and observe framework/root readiness.
-4. Compare mounts, services, properties and boot behavior.
-5. Produce a dynamic report.
-6. Discard or roll back the guest snapshot.
-
-This would let users test many module behaviors **without installing the module on the physical host phone**.
+RootPreflight does **not** install or execute a selected module in the MVP.
 
 ## Risk score
 
@@ -81,7 +66,6 @@ A LOW score is **not a guarantee of safety**. Static analysis cannot fully deter
 ```text
 app/            Android UI + optional root environment probe
 scanner-core/   Pure Kotlin ZIP/module analysis engine + conflict detector
-docs/           Analyzer design and roadmap notes
 .github/        CI
 ```
 
@@ -110,8 +94,6 @@ GitHub Actions installs the required toolchain and builds the debug APK automati
 ## Security model
 
 RootPreflight treats selected ZIPs as untrusted input. The scanner does not execute module scripts and does not extract the selected module into system locations. Root access, when granted, is used only for read-only indexing of the installed module workspace in the current MVP.
-
-See [`docs/ANALYSIS_ENGINE.md`](docs/ANALYSIS_ENGINE.md) for current rules and limitations.
 
 ## Non-goals
 
