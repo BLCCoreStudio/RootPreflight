@@ -1,103 +1,43 @@
 # RootPreflight
 
-**Know what a root module will do before you install it.**
+> **Status: incomplete research prototype — not a usable Android application.**
 
-RootPreflight is an Android pre-install safety and compatibility scanner for **Magisk, KernelSU and APatch-style modules**.
+RootPreflight explored the idea of inspecting Magisk, KernelSU and APatch-style module metadata before installation. The repository currently contains only an early Kotlin core model and conflict-detection foundation.
 
-Choose a module ZIP and RootPreflight inspects its metadata, boot/install scripts, system overlays, property changes and archive structure before you install it.
+It does **not** currently ship a complete ZIP scanner, Android UI, APK, release artifact, or end-to-end module analysis workflow.
 
-> **Status:** `0.1.0-alpha.1` MVP. The static scanner and optional root-aware conflict index are implemented.
+## What exists
 
-## Why this exists
+The current `scanner-core` module contains early Kotlin types and conflict-detection logic intended to support future static analysis work.
 
-Root modules can execute scripts during installation and boot, override system files and properties, start long-running services, alter mounts and in some cases touch boot-critical storage. Reading every shell script manually is slow, and two individually valid modules can still conflict with each other.
-
-RootPreflight turns that review into an understandable report:
+Current repository structure:
 
 ```text
-Module: Example Performance Module
-Risk: HIGH (67/100)
-
-HIGH    Direct block-device write
-MEDIUM  post-fs-data.sh execution hook
-MEDIUM  Runtime property override
-LOW     14 system overlay targets
-
-Installed-module conflicts:
-- 2 overlapping /system targets with ExampleCore
-- 1 overlapping property key with TunerModule
+scanner-core/   Early Kotlin analysis model and conflict-detection foundation
 ```
 
-## MVP capabilities
+The Gradle project intentionally includes only the code that is actually present in the repository.
 
-- Scan a module ZIP without extracting it to storage
-- Parse `module.prop`
-- Recognize common lifecycle/install scripts
-- Detect high-impact shell patterns such as direct block-device writes, filesystem formatting, broad destructive deletes, SELinux weakening and network-fetched shell execution
-- Detect mount/bind/overlay activity, property overrides, package control, firewall changes and broad writable permissions
-- Index `system/` overlay targets
-- Index `system.prop` keys
-- Flag native-looking payloads that need deeper review
-- Detect absolute paths, parent traversal and duplicate ZIP entries
-- Apply entry/text/uncompressed-data limits to reduce ZIP-bomb exposure
-- Work in **Static Mode** on an unrooted phone
-- If root is granted, index installed modules under `/data/adb/modules` and report overlapping file/property targets
+## Original research direction
 
-## Static Mode vs Root Mode
+The prototype was intended to investigate whether a local, explainable pre-install inspection tool could eventually:
 
-**Static Mode** does not require root. It answers: *What is inside this ZIP and what behaviors are visible before installation?*
+- parse root-module metadata,
+- inspect lifecycle/install scripts without executing them,
+- identify potentially destructive shell patterns,
+- compare module overlay/property targets,
+- detect obvious archive-path hazards,
+- and explain possible conflicts with installed modules.
 
-**Root Mode** adds device context. It can inspect installed module overlays/properties and answer: *Will this ZIP collide with something already installed here?*
+Those capabilities should be treated as **design goals, not implemented product claims**.
 
-RootPreflight does **not** install or execute a selected module in the MVP.
+## Safety boundary
 
-## Risk score
+Any future implementation should treat selected module archives as untrusted input and avoid executing their scripts during static inspection. Static analysis alone also cannot prove that a module is safe, particularly when native binaries, obfuscated payloads, runtime downloads, or device-specific behavior are involved.
 
-The score is a deterministic heuristic, not an AI verdict. High-impact patterns add more weight than ordinary lifecycle hooks or overlay files. The score is intentionally explainable: every point comes from visible findings in the report.
+## Development status
 
-- `LOW`: 0–19
-- `MEDIUM`: 20–49
-- `HIGH`: 50–100
-
-A LOW score is **not a guarantee of safety**. Static analysis cannot fully determine the behavior of native binaries, obfuscated code, runtime downloads or device/OEM-specific interactions.
-
-## Project structure
-
-```text
-app/            Android UI + optional root environment probe
-scanner-core/   Pure Kotlin ZIP/module analysis engine + conflict detector
-.github/        CI
-```
-
-The scanner engine is kept separate from Android UI code so its rules can be unit-tested and later reused by CLI/CI integrations.
-
-## Android baseline
-
-- `compileSdk = 37`
-- `targetSdk = 37`
-- `minSdk = 26`
-- Android Gradle Plugin `9.3.0`
-- AGP 9 built-in Kotlin (Compose compiler plugin `2.3.21`)
-- JDK `17`
-- Compose BOM `2026.08.00`
-
-## Build
-
-With Gradle 9.5.0 available:
-
-```bash
-gradle :scanner-core:test :app:assembleDebug
-```
-
-GitHub Actions installs the required toolchain and builds the debug APK automatically.
-
-## Security model
-
-RootPreflight treats selected ZIPs as untrusted input. The scanner does not execute module scripts and does not extract the selected module into system locations. Root access, when granted, is used only for read-only indexing of the installed module workspace in the current MVP.
-
-## Non-goals
-
-RootPreflight is not an antivirus engine, anti-cheat bypass tool, root-hiding tool or guarantee that a module cannot bootloop a specific device. Its job is explainable **pre-install inspection and compatibility analysis**.
+This repository is not currently one of BLCCoreStudio's actively developed flagship projects. It is retained as an early research snapshot unless the concept is resumed with a complete implementation and verifiable tests.
 
 ## License
 
