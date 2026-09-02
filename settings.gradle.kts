@@ -17,5 +17,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "RootPreflight"
-include(":app")
 include(":scanner-core")
